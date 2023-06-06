@@ -13,14 +13,21 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "Test 1",
-	name: "Totally not Egg Inc. rip off",
+	num: "Test 2",
+	name: "Revolutionary Invention",
 }
 
 let changelog = `<h1>Changelog:</h1><br>
-	<h3>Test 1</h3><br>
-		- Added things.<br>
-		- Added stuff.`
+	<h3>Test 2: Revolutionary Invention</h3><br>
+		- Added more researches.<br>
+		- Added vehicles. (DEADASS)<br>
+		- Removed useless "tree-tab" tabs. (for now)<br>
+		- Removed cursed milestone popups. (/j)<br>
+	<h3>Test 1: Totally not Egg Inc. rip off</h3><br>
+		- Added habitats.<br>
+		- Added some researches. <br>
+		- Added, like, all eg- jellies lmfao. <br>
+		- Added useless "tree-tab" tabs`
 
 let winText = `Congratulations! You have reached the end and beaten this game, but for now...`
 
@@ -85,7 +92,7 @@ function addedPlayerData() { return {
 }}
 
 // Display extra things at the top of the page
-var displayThings = [
+var displayThings = ["milestonePopups doesn't exist."
 ]
 
 // Determines when the game "ends"

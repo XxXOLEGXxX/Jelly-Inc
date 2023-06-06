@@ -24,6 +24,7 @@ addLayer("tree-tab", {
 		jellykens: new Decimal(0)
 	}},
 	tabFormat: {
+		"Take your time, TCNick3": {
 		"Upgrades": {
 		},
 		"Prestige": {
@@ -38,6 +39,7 @@ addLayer("tree-tab", {
 		},
 		"Trophies": {
 		},
+		}
 	},
 	update(diff){
 		player[this.layer].jellykens = getKenAmount()
@@ -66,14 +68,17 @@ function dotheFunny() {
 				hatch: new Decimal(50),
 				limit: new Decimal(0),
 				time: new Decimal(0),
+				rechargeTime: new Decimal(0),
 				eggsPerSec: new Decimal(0),
 				jelliesPerSec: new Decimal(0),
 				kensPerSec: new Decimal(0),
-				capacity: new Decimal(0)
+				capacity: new Decimal(0),
+				vehicle: new Decimal(0),
+				researchLevels: new Decimal(0)
 			}},
 			tabFormat: {
 				"Researches": {
-					content: [["buyable", 41], ["buyable", 42], ["buyable", 43]]
+					content: [["display-text", function() {return "<h2>Researches: AKA Not-So-Permanent Upgrades</h2><br><h4>Researches are upgrades with level cap that enhance various attributes, such as your jelly value, jelly's generation or jellyken's reproduction. Each Tier has 4 upgrades each and to unlock next Tier, you need to reach the required total amount of research levels.<br><Br>Researches from different Tiers compound with each other btw.</h4><br><br><h1>Tier 1"}], "blank", "blank", ["buyable", 51], ["buyable", 52], ["buyable", 53], ["buyable", 54], ["display-text", function() {return "<br><br><h1>Tier 2</h1><h3>"+(player[this.layer].researchLevels.gte(60)?"<br><br>":"<br>You need "+formatWhole(new Decimal(60).sub(player[this.layer].researchLevels))+" more research levels to unlock Tier 2.")}], "blank", ["buyable", 55],["buyable", 56],["buyable", 57],["buyable", 58]]
 				},
 				"Habitats": {
 					content: [["display-text", function() {return player[this.layer].capacity}],["row", [["buyable", 31], ["buyable", 32], ["buyable", 33]]], ["row", [["buyable", 34], ["buyable", 35], ["buyable", 36]]]]
@@ -82,6 +87,7 @@ function dotheFunny() {
 					content: [["display-text", function() {return "<h4>You currently have "+formatWhole(player[this.layer].jellykens)+" "+eggResource[i]+" jellykens, generating "+format(player[this.layer].eggsPerSec)+" "+eggResource[i]+" jellies per second.<br>Current "+eggResource[i]+" jelly-to-jelly ratio: "+player[this.layer].value+" jellies"}], () => player[eggName].points.gte(1) ? "" : "prestige-button", "blank", ["row", [["buyable", 11], "blank", "blank", ["bar", "bigBar"]]], "blank", ["buyable", 21]]
 				},
 				"Vehicles": {
+					content: [["display-text", function() {return player[this.layer].vehicle}],["row", [["buyable", 41],["buyable", 42],["buyable", 43],["buyable", 44]]],["row", [["buyable", 45],["buyable", 46],["buyable", 47],["buyable", 48]]]]
 				},
 				"Artifacts": {
 				},
@@ -90,6 +96,7 @@ function dotheFunny() {
 			prestigeButtonText() {return "Unlock "+eggResource[i]+" jelly"},
 			requires(){return eggRequirement[i]}, // Can be a function that takes requirement increases into account
 			resource(){return eggResource[i]+" eggs"}, // Name of prestige currency
+			milestonePopups: false,
 			baseResource: "points", // Name of resource prestige is based on
 			baseAmount() {return player.points}, // Get the current amount of baseResource
 			type: "static", // normal: cost to gain currency depends on amount gained. static: cost depends on how much you already have
@@ -107,15 +114,21 @@ function dotheFunny() {
 			layerShown(){return hasMilestone(eggName, 0)},
 			milestonePopups: true,
 			update(diff){
-			    player[this.layer].value = new Decimal(eggValue[i]).mul(buyableEffect(this.layer, 41))
+				player[this.layer].rechargeTime = player[this.layer].rechargeTime.add(diff)
+			    player[this.layer].vehicle = new Decimal(0)
+				player[this.layer].vehicle = player[this.layer].vehicle.add(tmp[this.layer].buyables[41].vehicle).add(tmp[this.layer].buyables[42].vehicle).add(tmp[this.layer].buyables[44].vehicle).add(tmp[this.layer].buyables[44].vehicle).add(tmp[this.layer].buyables[45].vehicle).add(tmp[this.layer].buyables[46].vehicle).add(tmp[this.layer].buyables[47].vehicle).add(tmp[this.layer].buyables[48].vehicle).times(buyableEffect(this.layer, 52)).times(buyableEffect(this.layer, 56))
+				let fuckOFF = player[this.layer].vehicle
+			    player[this.layer].value = new Decimal(eggValue[i]).mul(buyableEffect(this.layer, 51)).mul(buyableEffect(this.layer, 58))
 			    player[this.layer].capacity = new Decimal(0)
-				player[this.layer].kensPerSec = tmp[eggName].buyables[42].effect.div(60)
+				player[this.layer].researchLevels = new Decimal(player[this.layer].buyables[51]).add(player[this.layer].buyables[52]).add(player[this.layer].buyables[53]).add(player[this.layer].buyables[54])
+				player[this.layer].kensPerSec = tmp[eggName].buyables[55].effect.div(60)
 				player[this.layer].capacity = player[this.layer].capacity.add(tmp[this.layer].buyables[31].capacity).add(tmp[this.layer].buyables[32].capacity).add(tmp[this.layer].buyables[33].capacity).add(tmp[this.layer].buyables[34].capacity).add(tmp[this.layer].buyables[35].capacity).add(tmp[this.layer].buyables[36].capacity)
-				player[this.layer].limit = new Decimal(10).add(tmp[this.layer].buyables[43].effect)
+				player[this.layer].limit = new Decimal(10).add(tmp[this.layer].buyables[53].effect)
 				player[this.layer].time = player[this.layer].time.add(diff)
-				if(player[this.layer].hatch.lt(player[this.layer].limit) && player[this.layer].time.gte(1)) player[this.layer].hatch = player[this.layer].hatch.add(Decimal.mul(diff, player[this.layer].limit).div(100))
+				if(player[this.layer].hatch.lt(player[this.layer].limit) && player[this.layer].time.gte(1)) player[this.layer].hatch = player[this.layer].hatch.add(Decimal.mul(Decimal.mul(diff, buyableEffect(this.layer, 57)), player[this.layer].limit).div(100))
 				if(player[this.layer].hatch.gte(player[this.layer].limit)) player[this.layer].hatch = new Decimal(10)
-				player[this.layer].eggsPerSec = player[this.layer].jellykens
+				player[this.layer].eggsPerSec = player[this.layer].jellykens.mul(buyableEffect(this.layer, 54))
+				if(player[this.layer].eggsPerSec.gte(player[this.layer].vehicle)) player[this.layer].eggsPerSec = fuckOFF
 				player[this.layer].jelliesPerSec = player[this.layer].eggsPerSec.mul(player[this.layer].value)
 				if(player[this.layer].capacity.gt(player[this.layer].jellykens)) player[this.layer].jellykens = player[this.layer].jellykens.add(Decimal.mul(player[this.layer].kensPerSec, diff))
 				if(player[this.layer].capacity.lte(player[this.layer].jellykens)) player[this.layer].jellykens = player[this.layer].capacity
@@ -147,12 +160,13 @@ function dotheFunny() {
 			buyables: {
 				11: {
 					cost() { return new Decimal(1) },
-					display() { return "<h2>The Almighty Button</h2><br><br><h3>Generates "+formatWhole(tmp[this.layer].buyables[21].effect)+" jellyken in this floor" },
-					canAfford() { return player[this.layer].hatch.gte(tmp[this.layer].buyables[21].effect) && player[this.layer].jellykens.lt(player[this.layer].capacity) },
+					display() { return "<h2>The Almighty Button</h2><br><br><h3>Generates "+formatWhole(tmp[this.layer].buyables[21].effect)+" jellyken in this floor<br><br>Current Cooldown: 1 second" },
+					canAfford() { return player[this.layer].hatch.gte(tmp[this.layer].buyables[21].effect) && player[this.layer].rechargeTime.gte(1) && player[this.layer].jellykens.lt(player[this.layer].capacity) },
 					buy() {
 						player[this.layer].jellykens = player[this.layer].jellykens.add(tmp[this.layer].buyables[21].effect)
 						player[this.layer].hatch = player[this.layer].hatch.sub(tmp[this.layer].buyables[21].effect)
 						player[this.layer].time = new Decimal(0)
+						player[this.layer].rechargeTime = new Decimal(0)
 					},
 				},
 				21: {
@@ -166,7 +180,7 @@ function dotheFunny() {
 					},
 				},
 				31: {
-					cost() { return new Decimal(128).pow(player[this.layer].buyables[this.id]) },
+					cost() { return Decimal.mul(64, Decimal.pow(1.271828, player[this.layer].buyables[this.id])).pow(player[this.layer].buyables[this.id]).mul(22.5) },
 					capacity() {return [1,10,70,350,5000,25000,150000,2345000,22000000,300000000][player[this.layer].buyables[this.id]||0]},
 					display() { return "<h2>"+(["Factory Foundation", "Small Well", "Megajelly Storage", "Magic Volcano", "Tree Garden", "Egg Gate", "Ken-nado Windmill", "Ancient Treasure Chest", "Wish Granting Fountain", "Portal Warper"][player[this.layer].buyables[this.id]||0])+"<br><br>Capacity: "+format(this.capacity())+"<br>"+(player[this.layer].buyables[this.id].gte(9)?"":"Next Level Cost: "+format(this.cost())+" jellies") },
 					canAfford() { return player.points.gte(this.cost()) && player[this.layer].buyables[this.id].lt(9) },
@@ -176,7 +190,7 @@ function dotheFunny() {
 					},
 				},
 				32: {
-					cost() { return new Decimal(128).pow(player[this.layer].buyables[this.id]) },
+					cost() { return Decimal.mul(64, Decimal.pow(1.271828, player[this.layer].buyables[this.id])).pow(player[this.layer].buyables[this.id]).mul(45) },
 					capacity() {return [1,10,70,350,5000,25000,150000,2345000,22000000,300000000][player[this.layer].buyables[this.id]||0]},
 					display() { return "<h2>"+(["Factory Foundation", "Small Well", "Megajelly Storage", "Magic Volcano", "Tree Garden", "Egg Gate", "Ken-nado Windmill", "Ancient Treasure Chest", "Wish Granting Fountain", "Portal Warper"][player[this.layer].buyables[this.id]||0])+"<br><br>Capacity: "+format(this.capacity())+"<br>"+(player[this.layer].buyables[this.id].gte(9)?"":"Next Level Cost: "+format(this.cost())+" jellies") },
 					canAfford() { return player.points.gte(this.cost()) && player[this.layer].buyables[this.id].lt(9) },
@@ -186,7 +200,7 @@ function dotheFunny() {
 					},
 				},
 				33: {
-					cost() { return new Decimal(128).pow(player[this.layer].buyables[this.id]) },
+					cost() { return Decimal.mul(64, Decimal.pow(1.271828, player[this.layer].buyables[this.id])).pow(player[this.layer].buyables[this.id]).mul(81) },
 					capacity() {return [1,10,70,350,5000,25000,150000,2345000,22000000,300000000][player[this.layer].buyables[this.id]||0]},
 					display() { return "<h2>"+(["Factory Foundation", "Small Well", "Megajelly Storage", "Magic Volcano", "Tree Garden", "Egg Gate", "Ken-nado Windmill", "Ancient Treasure Chest", "Wish Granting Fountain", "Portal Warper"][player[this.layer].buyables[this.id]||0])+"<br><br>Capacity: "+format(this.capacity())+"<br>"+(player[this.layer].buyables[this.id].gte(9)?"":"Next Level Cost: "+format(this.cost())+" jellies") },
 					canAfford() { return player.points.gte(this.cost()) && player[this.layer].buyables[this.id].lt(9) },
@@ -196,7 +210,7 @@ function dotheFunny() {
 					},
 				},
 				34: {
-					cost() { return new Decimal(128).pow(player[this.layer].buyables[this.id]) },
+					cost() { return Decimal.mul(64, Decimal.pow(1.271828, player[this.layer].buyables[this.id])).pow(player[this.layer].buyables[this.id]).mul(129.6) },
 					capacity() {return [1,10,70,350,5000,25000,150000,2345000,22000000,300000000][player[this.layer].buyables[this.id]||0]},
 					display() { return "<h2>"+(["Factory Foundation", "Small Well", "Megajelly Storage", "Magic Volcano", "Tree Garden", "Egg Gate", "Ken-nado Windmill", "Ancient Treasure Chest", "Wish Granting Fountain", "Portal Warper"][player[this.layer].buyables[this.id]||0])+"<br><br>Capacity: "+format(this.capacity())+"<br>"+(player[this.layer].buyables[this.id].gte(9)?"":"Next Level Cost: "+format(this.cost())+" jellies") },
 					canAfford() { return player.points.gte(this.cost()) && player[this.layer].buyables[this.id].lt(9) },
@@ -206,7 +220,7 @@ function dotheFunny() {
 					},
 				},
 				35: {
-					cost() { return new Decimal(128).pow(player[this.layer].buyables[this.id]) },
+					cost() { return Decimal.mul(64, Decimal.pow(1.271828, player[this.layer].buyables[this.id])).pow(player[this.layer].buyables[this.id]).mul(181.44) },
 					capacity() {return [1,10,70,350,5000,25000,150000,2345000,22000000,300000000][player[this.layer].buyables[this.id]||0]},
 					display() { return "<h2>"+(["Factory Foundation", "Small Well", "Megajelly Storage", "Magic Volcano", "Tree Garden", "Egg Gate", "Ken-nado Windmill", "Ancient Treasure Chest", "Wish Granting Fountain", "Portal Warper"][player[this.layer].buyables[this.id]||0])+"<br><br>Capacity: "+format(this.capacity())+"<br>"+(player[this.layer].buyables[this.id].gte(9)?"":"Next Level Cost: "+format(this.cost())+" jellies") },
 					canAfford() { return player.points.gte(this.cost()) && player[this.layer].buyables[this.id].lt(9) },
@@ -216,7 +230,7 @@ function dotheFunny() {
 					},
 				},
 				36: {
-					cost() { return new Decimal(128).pow(player[this.layer].buyables[this.id]) },
+					cost() { return Decimal.mul(64, Decimal.pow(1.271828, player[this.layer].buyables[this.id])).pow(player[this.layer].buyables[this.id]).mul(217.728) },
 					capacity() {return [1,10,70,350,5000,25000,150000,2345000,22000000,300000000][player[this.layer].buyables[this.id]||0]},
 					display() { return "<h2>"+(["Factory Foundation", "Small Well", "Megajelly Storage", "Magic Volcano", "Tree Garden", "Egg Gate", "Ken-nado Windmill", "Ancient Treasure Chest", "Wish Granting Fountain", "Portal Warper"][player[this.layer].buyables[this.id]||0])+"<br><br>Capacity: "+format(this.capacity())+"<br>"+(player[this.layer].buyables[this.id].gte(9)?"":"Next Level Cost: "+format(this.cost())+" jellies") },
 					canAfford() { return player.points.gte(this.cost()) && player[this.layer].buyables[this.id].lt(9) },
@@ -226,34 +240,179 @@ function dotheFunny() {
 					},
 				},
 				41: {
-					cost() { return new Decimal(10).mul(Decimal.pow(1.15, player[this.layer].buyables[this.id])) },
-					effect() {return Decimal.add(1, Decimal.div(player[this.layer].buyables[this.id], 20))},
-					display() { return "<h2>Better Flavour</h2><br><br><h3>Effect: +"+format(this.effect().times(100).sub(100))+"% "+eggResource[i]+" jelly value (+1.05x)<br>Cost Scaling: (1.1^x)<br>Cost: "+format(this.cost())+" jellies" },
-					canAfford() { return player.points.gte(this.cost()) },
+					cost() { return Decimal.mul(64, Decimal.pow(1.271828, player[this.layer].buyables[this.id])).pow(player[this.layer].buyables[this.id]).mul(40) },
+					vehicle() {return [1,10,70,350,5000,25000,150000,2345000,22000000,300000000][player[this.layer].buyables[this.id]||0]},
+					display() { return "<h2>"+(["Factory Foundation", "Small Well", "Megajelly Storage", "Magic Volcano", "Tree Garden", "Egg Gate", "Ken-nado Windmill", "Ancient Treasure Chest", "Wish Granting Fountain", "Portal Warper"][player[this.layer].buyables[this.id]||0])+"<br><br>vehicle: "+format(this.vehicle())+"<br>"+(player[this.layer].buyables[this.id].gte(9)?"":"Next Level Cost: "+format(this.cost())+" jellies") },
+					canAfford() { return player.points.gte(this.cost()) && player[this.layer].buyables[this.id].lt(9) },
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
 					},
 				},
 				42: {
-					cost() { return new Decimal(10).mul(Decimal.pow(1.5, player[this.layer].buyables[this.id])) },
-					effect() {return player[this.layer].buyables[this.id]},
-					display() { return "<h2>Reproduction ig</h2><br><br><h3>Effect: "+format(this.effect())+" "+eggResource[i]+" jellykens/minute (+1)<br>Cost Scaling: (1.5^x)<br>Cost: "+format(this.cost())+" jellies" },
-					canAfford() { return player.points.gte(this.cost()) },
+					cost() { return Decimal.mul(64, Decimal.pow(1.271828, player[this.layer].buyables[this.id])).pow(player[this.layer].buyables[this.id]).mul(80) },
+					vehicle() {return [1,10,70,350,5000,25000,150000,2345000,22000000,300000000][player[this.layer].buyables[this.id]||0]},
+					display() { return "<h2>"+(["Factory Foundation", "Small Well", "Megajelly Storage", "Magic Volcano", "Tree Garden", "Egg Gate", "Ken-nado Windmill", "Ancient Treasure Chest", "Wish Granting Fountain", "Portal Warper"][player[this.layer].buyables[this.id]||0])+"<br><br>vehicle: "+format(this.vehicle())+"<br>"+(player[this.layer].buyables[this.id].gte(9)?"":"Next Level Cost: "+format(this.cost())+" jellies") },
+					canAfford() { return player.points.gte(this.cost()) && player[this.layer].buyables[this.id].lt(9) },
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
 					},
 				},
 				43: {
-					cost() { return new Decimal(25).mul(Decimal.pow(1.3, player[this.layer].buyables[this.id])) },
-					effect() {return player[this.layer].buyables[this.id]},
-					display() { return "<h2>HATCHERY?!?!?!? WTF</h2><br><br><h3>Effect: "+format(this.effect())+" hatchery limit (+1)<br>Cost Scaling: (1.3^x)<br>Cost: "+format(this.cost())+" jellies" },
-					canAfford() { return player.points.gte(this.cost()) },
+					cost() { return Decimal.mul(64, Decimal.pow(1.271828, player[this.layer].buyables[this.id])).pow(player[this.layer].buyables[this.id]).mul(148.5714286) },
+					vehicle() {return [1,10,70,350,5000,25000,150000,2345000,22000000,300000000][player[this.layer].buyables[this.id]||0]},
+					display() { return "<h2>"+(["Factory Foundation", "Small Well", "Megajelly Storage", "Magic Volcano", "Tree Garden", "Egg Gate", "Ken-nado Windmill", "Ancient Treasure Chest", "Wish Granting Fountain", "Portal Warper"][player[this.layer].buyables[this.id]||0])+"<br><br>vehicle: "+format(this.vehicle())+"<br>"+(player[this.layer].buyables[this.id].gte(9)?"":"Next Level Cost: "+format(this.cost())+" jellies") },
+					canAfford() { return player.points.gte(this.cost()) && player[this.layer].buyables[this.id].lt(9) },
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
 					},
+				},
+				44: {
+					cost() { return Decimal.mul(64, Decimal.pow(1.271828, player[this.layer].buyables[this.id])).pow(player[this.layer].buyables[this.id]).mul(254.6938776) },
+					vehicle() {return [1,10,70,350,5000,25000,150000,2345000,22000000,300000000][player[this.layer].buyables[this.id]||0]},
+					display() { return "<h2>"+(["Factory Foundation", "Small Well", "Megajelly Storage", "Magic Volcano", "Tree Garden", "Egg Gate", "Ken-nado Windmill", "Ancient Treasure Chest", "Wish Granting Fountain", "Portal Warper"][player[this.layer].buyables[this.id]||0])+"<br><br>vehicle: "+format(this.vehicle())+"<br>"+(player[this.layer].buyables[this.id].gte(9)?"":"Next Level Cost: "+format(this.cost())+" jellies") },
+					canAfford() { return player.points.gte(this.cost()) && player[this.layer].buyables[this.id].lt(9) },
+					buy() {
+						player.points = player.points.sub(this.cost())
+						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+					},
+				},
+				45: {
+					cost() { return Decimal.mul(64, Decimal.pow(1.271828, player[this.layer].buyables[this.id])).pow(player[this.layer].buyables[this.id]).mul(400.2332362) },
+					vehicle() {return [1,10,70,350,5000,25000,150000,2345000,22000000,300000000][player[this.layer].buyables[this.id]||0]},
+					display() { return "<h2>"+(["Factory Foundation", "Small Well", "Megajelly Storage", "Magic Volcano", "Tree Garden", "Egg Gate", "Ken-nado Windmill", "Ancient Treasure Chest", "Wish Granting Fountain", "Portal Warper"][player[this.layer].buyables[this.id]||0])+"<br><br>vehicle: "+format(this.vehicle())+"<br>"+(player[this.layer].buyables[this.id].gte(9)?"":"Next Level Cost: "+format(this.cost())+" jellies") },
+					canAfford() { return player.points.gte(this.cost()) && player[this.layer].buyables[this.id].lt(9) },
+					buy() {
+						player.points = player.points.sub(this.cost())
+						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+					},
+				},
+				46: {
+					cost() { return Decimal.mul(64, Decimal.pow(1.271828, player[this.layer].buyables[this.id])).pow(player[this.layer].buyables[this.id]).mul(571.7617659) },
+					vehicle() {return [1,10,70,350,5000,25000,150000,2345000,22000000,300000000][player[this.layer].buyables[this.id]||0]},
+					display() { return "<h2>"+(["Factory Foundation", "Small Well", "Megajelly Storage", "Magic Volcano", "Tree Garden", "Egg Gate", "Ken-nado Windmill", "Ancient Treasure Chest", "Wish Granting Fountain", "Portal Warper"][player[this.layer].buyables[this.id]||0])+"<br><br>vehicle: "+format(this.vehicle())+"<br>"+(player[this.layer].buyables[this.id].gte(9)?"":"Next Level Cost: "+format(this.cost())+" jellies") },
+					canAfford() { return player.points.gte(this.cost()) && player[this.layer].buyables[this.id].lt(9) },
+					buy() {
+						player.points = player.points.sub(this.cost())
+						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+					},
+				},
+				47: {
+					cost() { return Decimal.mul(64, Decimal.pow(1.271828, player[this.layer].buyables[this.id])).pow(player[this.layer].buyables[this.id]).mul(735.1222703) },
+					vehicle() {return [1,10,70,350,5000,25000,150000,2345000,22000000,300000000][player[this.layer].buyables[this.id]||0]},
+					display() { return "<h2>"+(["Factory Foundation", "Small Well", "Megajelly Storage", "Magic Volcano", "Tree Garden", "Egg Gate", "Ken-nado Windmill", "Ancient Treasure Chest", "Wish Granting Fountain", "Portal Warper"][player[this.layer].buyables[this.id]||0])+"<br><br>vehicle: "+format(this.vehicle())+"<br>"+(player[this.layer].buyables[this.id].gte(9)?"":"Next Level Cost: "+format(this.cost())+" jellies") },
+					canAfford() { return player.points.gte(this.cost()) && player[this.layer].buyables[this.id].lt(9) },
+					buy() {
+						player.points = player.points.sub(this.cost())
+						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+					},
+				},
+				48: {
+					cost() { return Decimal.mul(64, Decimal.pow(1.271828, player[this.layer].buyables[this.id])).pow(player[this.layer].buyables[this.id]).mul(840.1397373) },
+					vehicle() {return [1,10,70,350,5000,25000,150000,2345000,22000000,300000000][player[this.layer].buyables[this.id]||0]},
+					display() { return "<h2>"+(["Factory Foundation", "Small Well", "Megajelly Storage", "Magic Volcano", "Tree Garden", "Egg Gate", "Ken-nado Windmill", "Ancient Treasure Chest", "Wish Granting Fountain", "Portal Warper"][player[this.layer].buyables[this.id]||0])+"<br><br>vehicle: "+format(this.vehicle())+"<br>"+(player[this.layer].buyables[this.id].gte(9)?"":"Next Level Cost: "+format(this.cost())+" jellies") },
+					canAfford() { return player.points.gte(this.cost()) && player[this.layer].buyables[this.id].lt(9) },
+					buy() {
+						player.points = player.points.sub(this.cost())
+						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+					},
+				},
+				51: {
+					cost() { return new Decimal(15).mul(Decimal.pow(1.15, player[this.layer].buyables[this.id])) },
+					effect() {return Decimal.add(1, Decimal.div(player[this.layer].buyables[this.id], 20))},
+					display() { return "<h2>Better Flavour</h2><h4>level: "+formatWhole(player[this.layer].buyables[this.id])+"/25</h4><h3>Effect: +"+format(this.effect().times(100).sub(100))+"% "+eggResource[i]+" jelly value (+1.05x)<br>Cost Scaling: (1.15^x)<br>Cost: "+format(this.cost())+" jellies" },
+					canAfford() { return player.points.gte(this.cost()) && !player[this.layer].buyables[this.id].gte(25) },
+					buy() {
+						player.points = player.points.sub(this.cost())
+						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+					},
+					style() {return {'width': '300px', 'height': '100px'}}
+				},
+				52: {
+					cost() { return new Decimal(80).mul(Decimal.pow(1.35, player[this.layer].buyables[this.id])) },
+					effect() {return Decimal.add(1, Decimal.div(player[this.layer].buyables[this.id], 10))},
+					display() { return "<h2>Faster Vehicles</h2><h4>level: "+formatWhole(player[this.layer].buyables[this.id])+"/30</h4><h3>Effect: +"+format(this.effect().times(100).sub(100))+"% vehicle capacity (+1.1x)<br>Cost Scaling: (1.35^x)<br>Cost: "+format(this.cost())+" jellies" },
+					canAfford() { return player.points.gte(this.cost()) && !player[this.layer].buyables[this.id].gte(25) },
+					buy() {
+						player.points = player.points.sub(this.cost())
+						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+					},
+					style() {return {'width': '300px', 'height': '100px'}}
+				},
+				53: {
+					cost() { return new Decimal(25).mul(Decimal.pow(1.3, player[this.layer].buyables[this.id])) },
+					effect() {return player[this.layer].buyables[this.id]},
+					display() { return "<h2>HATCHERY?!?!?!? WTF</h2><h4>level: "+formatWhole(player[this.layer].buyables[this.id])+"/15</h4><h3>Effect: "+format(this.effect())+" hatchery limit (+1)<br>Cost Scaling: (1.3^x)<br>Cost: "+format(this.cost())+" jellies" },
+					canAfford() { return player.points.gte(this.cost()) && !player[this.layer].buyables[this.id].gte(15) },
+					buy() {
+						player.points = player.points.sub(this.cost())
+						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+					},
+					style() {return {'width': '300px', 'height': '100px'}}
+				},
+				54: {
+					cost() { return new Decimal(100).mul(Decimal.pow(1.25, player[this.layer].buyables[this.id])) },
+					effect() {return Decimal.add(1, Decimal.div(player[this.layer].buyables[this.id], 10))},
+					display() { return "<h2>Faster Egging lmfao</h2><h4>level: "+formatWhole(player[this.layer].buyables[this.id])+"/15</h4><h3>Effect: +"+format(this.effect().times(100).sub(100))+"% "+eggResource[i]+" jellies/sec (+1.1x)<br>Cost Scaling: (1.25^x)<br>Cost: "+format(this.cost())+" jellies" },
+					canAfford() { return player.points.gte(this.cost()) && !player[this.layer].buyables[this.id].gte(15) },
+					buy() {
+						player.points = player.points.sub(this.cost())
+						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+					},
+					style() {return {'width': '300px', 'height': '100px'}}
+				},
+				55: {
+					cost() { return new Decimal(1417.5).mul(Decimal.pow(1.5, player[this.layer].buyables[this.id])) },
+					effect() {let gain = new Decimal(0)
+							  if(player[this.layer].buyables[31].gte(1)) gain = gain.add(1)
+							  if(player[this.layer].buyables[32].gte(1)) gain = gain.add(1)
+							  if(player[this.layer].buyables[33].gte(1)) gain = gain.add(1)
+							  if(player[this.layer].buyables[34].gte(1)) gain = gain.add(1)
+							  if(player[this.layer].buyables[35].gte(1)) gain = gain.add(1)
+							  if(player[this.layer].buyables[36].gte(1)) gain = gain.add(1)
+							  return gain.mul(player[this.layer].buyables[this.id])},
+					display() { return "<h2>Reproduction ig</h2><h4>level: "+formatWhole(player[this.layer].buyables[this.id])+"/5</h4><h3>Effect: "+format(this.effect())+" "+eggResource[i]+" jellykens/minute per upgraded habitat<br>Cost Scaling: (1.5^x)<br>Cost: "+format(this.cost())+" jellies" },
+					canAfford() { return player.points.gte(this.cost()) && player[this.layer].researchLevels.gte(60) && !player[this.layer].buyables[this.id].gte(5) },
+					buy() {
+						player.points = player.points.sub(this.cost())
+						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+					},
+					style() {return {'width': '300px', 'height': '100px'}}
+				},
+				56: {
+					cost() { return new Decimal(2563).mul(Decimal.pow(1.65, player[this.layer].buyables[this.id])) },
+					effect() {return Decimal.add(1, Decimal.div(player[this.layer].buyables[this.id], 6.666666667))},
+					display() { return "<h2>Bigger Vehicles</h2><h4>level: "+formatWhole(player[this.layer].buyables[this.id])+"/20</h4><h3>Effect: +"+format(this.effect().times(100).sub(100))+"% vehicle capacity (+1.15x)<br>Cost Scaling: (1.65^x)<br>Cost: "+format(this.cost())+" jellies" },
+					canAfford() { return player.points.gte(this.cost()) && !player[this.layer].buyables[this.id].gte(20) },
+					buy() {
+						player.points = player.points.sub(this.cost())
+						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+					},
+					style() {return {'width': '300px', 'height': '100px'}}
+				},
+				57: {
+					cost() { return new Decimal(10485.76).mul(Decimal.pow(1.8, player[this.layer].buyables[this.id])) },
+					effect() {return Decimal.add(1, Decimal.div(player[this.layer].buyables[this.id], 2))},
+					display() { return "<h2>Hatchery Rooster</h2><h4>level: "+formatWhole(player[this.layer].buyables[this.id])+"/4</h4><h3>Effect: +"+format(this.effect().times(100).sub(100))+"% "+eggResource[i]+" hatchery base production (+1.5x)<br>Cost Scaling: (1.8^x)<br>Cost: "+format(this.cost())+" jellies" },
+					canAfford() { return player.points.gte(this.cost()) && player[this.layer].researchLevels.gte(60) && !player[this.layer].buyables[this.id].gte(4) },
+					buy() {
+						player.points = player.points.sub(this.cost())
+						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+					},
+					style() {return {'width': '300px', 'height': '100px'}}
+				},
+				58: {
+					cost() { return new Decimal(3616.565).mul(Decimal.pow(1.25, player[this.layer].buyables[this.id])) },
+					effect() {return Decimal.add(1, Decimal.div(player[this.layer].buyables[this.id], 10))},
+					display() { return "<h2>Polished Jelly</h2><h4>level: "+formatWhole(player[this.layer].buyables[this.id])+"/15</h4><h3>Effect: +"+format(this.effect().times(100).sub(100))+"% "+eggResource[i]+" jelly value (+1.1x)<br>Cost Scaling: (1.25^x)<br>Cost: "+format(this.cost())+" jellies" },
+					canAfford() { return player.points.gte(this.cost()) && player[this.layer].researchLevels.gte(60) && !player[this.layer].buyables[this.id].gte(15) },
+					buy() {
+						player.points = player.points.sub(this.cost())
+						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+					},
+					style() {return {'width': '300px', 'height': '100px'}}
 				},
 			},
 		})
