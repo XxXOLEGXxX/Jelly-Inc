@@ -21,28 +21,95 @@ addLayer("tree-tab", {
 		goldenEggs: new Decimal(0),
 		chocolateBars: new Decimal(0),
 		soulEggs: new Decimal(0),
-		jellykens: new Decimal(0)
+		jellykens: new Decimal(0),
+		piggyBank: new Decimal(0),
+		piggyLevel: new Decimal(0),
+		best: new Decimal(0),
+		total: new Decimal(0),
 	}},
 	tabFormat: {
-		"Take your time, TCNick3": {
 		"Upgrades": {
 		},
 		"Prestige": {
 		},
 		"Epic Shop": {
+			content: [["display-text", function() {return "<h1>YOU HAVE "+player[this.layer].goldenEggs+" GOLDEN JELLIES HOLY SHIT WAAAAAHOOOOOOO</h1><br><br><h2>Epic Shop: Giant Enemy Piggy Bank!</h2><br><h4>Epic Researches are essentially Researches that don't get reset. Ever... Sort of.<br>In order to buy Epic Researches, one must gather Golden Jellies from Piggy Bank. Upon breaking Piggy Bank, you gain them at the cost of resetting your progress.<br><br>also cracking piggy bank at it's limit levels it up"}], "blank", "buyables"]
 		},
 		"Main Hub": {
+			content: [["display-text", function() {return "<h2>There's not much you can do here. Go back to the farm."}]]
 		},
 		"Statistics": {
+			content: [["display-text", function() {return "<h2>You've made "+format(player[this.layer].total)+" jellies in total<br>Your best jelly amount is "+format(player[this.layer].best)+"<br>You currently have "+format(player[this.layer].jellykens)+" jellykens<br>You currently have "+format(player[this.layer].goldenEggs)+" golden jellies<br><br></h2><h3>If your jelliees were the size of jelly bean, they wouldn't even come close surpassing Tree Of Life's timewall."}]]
 		},
 		"Achievements": {
+			content: [["display-text", function() {return "idk lol"}], "blank", "achievements"]
 		},
 		"Trophies": {
-		},
+			content: [["display-text", function() {return "<h2>Trophies: The only achievements that truly matter in this game.</h2><br><br><br><br><br><br><br><br>... ahem, cough. you're not going to get 10 million jellykens anytime soon"}]]
 		}
+	},
+	buyables: {
+		11: {
+			cost() { return new Decimal(1) },
+			limit() { return new Decimal(7500).add(player[this.layer].piggyLevel.mul(1000))},
+			display() { return "piggy bank :)<br>level "+formatWhole(player[this.layer].piggyLevel.add(1))+"<br>"+format(player[this.layer].piggyBank)+"/"+formatWhole(this.limit()) },
+			canAfford() { return true },
+			buy() {
+				for(let dietz=0; dietz<19; dietz++){
+					layerDataReset("jelly"+dietz, true)
+				}
+				if (player[this.layer].piggyBank.gte(this.limit())) player[this.layer].piggyLevel = player[this.layer].piggyLevel.add(1)
+				player[this.layer].goldenEggs = player[this.layer].piggyBank
+				player[this.layer].piggyBank = new Decimal(0)
+			},
+			unlocked() { return true },
+		},
+		21: {
+			cost() { return new Decimal(15).mul(Decimal.pow(1.15, player[this.layer].buyables[this.id])) },
+			effect() {return Decimal.add(1, Decimal.div(player[this.layer].buyables[this.id], 20))},
+			display() { return "<h2>Super WIP" },
+			//canAfford() { return player.points.gte(this.cost()) && !player[this.layer].buyables[this.id].gte(75) },
+			canAfford() { return false },
+			buy() {
+				player[this.layer].goldenEggs = player[this.layer].goldenEggs.sub(this.cost())
+				setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+			},
+			unlocked() { return true },
+			style() {return {'width': '300px', 'height': '100px'}}
+		},
+	},
+	achievements: {
+		11: {
+			name: "It ain't much, but it's honest work",
+			tooltip: "Reach 6 jellykens",
+			done() {return player["tree-tab"].jellykens.gte(6)}
+		},
+		12: {
+			name: "Full House",
+			tooltip: "Upgrade all Habitats once",
+			done() {let magic = true
+					for(let ih=1;ih<7;ih++){
+						if(!player.jelly0.buyables[30+ih].gte(1)) magic = false
+				}
+				return magic
+			}
+		},
+		13: {
+			name: "so cool<br>so cool<br>so cool<br>so cool<br>so cool<br>so cool<br>so cool<br>so cool<br>so cool<br>so cool<br>so cool",
+			tooltip: "Upgrade all Vehicles once",
+			done() {let magic = true
+					for(let iv=1;iv<9;iv++){
+						if(!player.jelly0.buyables[40+iv].gte(1)) magic = false
+				}
+				return magic
+			}
+		},
 	},
 	update(diff){
 		player[this.layer].jellykens = getKenAmount()
+		if(player[this.layer].piggyBank.gte(tmp[this.layer].buyables[11].limit)) player[this.layer].piggyBank = tmp[this.layer].buyables[11].limit
+		player[this.layer].total = player[this.layer].total.add(getPointGen().times(diff))
+		player[this.layer].best = player[this.layer].best.max(player.points)
 	},
     previousTab: "",
     leftTab: true,
@@ -78,19 +145,28 @@ function dotheFunny() {
 			}},
 			tabFormat: {
 				"Researches": {
-					content: [["display-text", function() {return "<h2>Researches: AKA Not-So-Permanent Upgrades</h2><br><h4>Researches are upgrades with level cap that enhance various attributes, such as your jelly value, jelly's generation or jellyken's reproduction. Each Tier has 4 upgrades each and to unlock next Tier, you need to reach the required total amount of research levels.<br><Br>Researches from different Tiers compound with each other btw.</h4><br><br><h1>Tier 1"}], "blank", "blank", ["buyable", 51], ["buyable", 52], ["buyable", 53], ["buyable", 54], ["display-text", function() {return "<br><br><h1>Tier 2</h1><h3>"+(player[this.layer].researchLevels.gte(60)?"<br><br>":"<br>You need "+formatWhole(new Decimal(60).sub(player[this.layer].researchLevels))+" more research levels to unlock Tier 2.")}], "blank", ["buyable", 55],["buyable", 56],["buyable", 57],["buyable", 58]]
+					content: [["display-text", function() {return "<h2>Researches: AKA Not-So-Permanent Upgrades</h2><br><h4>Researches are upgrades with level cap that enhance various attributes, such as your jelly value, jelly's generation or jellyken's reproduction. Each Tier has 4 upgrades each and to unlock next Tier, you need to reach the required total amount of research levels.<br><Br>Researches from different Tiers compound with each other btw.</h4><br><br><h1>Tier 1"}], "blank", "blank", ["buyable", 51], ["buyable", 52], ["buyable", 53], ["buyable", 54], ["display-text", function() {return "<br><br><h1>Tier 2</h1><h3>"+(player[this.layer].researchLevels.gte(60)?"<br><br>":"<br>You need "+formatWhole(new Decimal(60).sub(player[this.layer].researchLevels))+" more research levels to unlock Tier 2.")}], "blank", ["buyable", 55],["buyable", 56],["buyable", 57],["buyable", 58]],
+					buttonStyle() {return {'border-color': 'white'}}
 				},
 				"Habitats": {
-					content: [["display-text", function() {return player[this.layer].capacity}],["row", [["buyable", 31], ["buyable", 32], ["buyable", 33]]], ["row", [["buyable", 34], ["buyable", 35], ["buyable", 36]]]]
+					content: [["display-text", function() {return player[this.layer].capacity}],["row", [["buyable", 31], ["buyable", 32], ["buyable", 33]]], ["row", [["buyable", 34], ["buyable", 35], ["buyable", 36]]]],
+					buttonStyle() {return {'border-color': 'white'}}
 				},
 				[eggResource[i]+' Inc.']: {
-					content: [["display-text", function() {return "<h4>You currently have "+formatWhole(player[this.layer].jellykens)+" "+eggResource[i]+" jellykens, generating "+format(player[this.layer].eggsPerSec)+" "+eggResource[i]+" jellies per second.<br>Current "+eggResource[i]+" jelly-to-jelly ratio: "+player[this.layer].value+" jellies"}], () => player[eggName].points.gte(1) ? "" : "prestige-button", "blank", ["row", [["buyable", 11], "blank", "blank", ["bar", "bigBar"]]], "blank", ["buyable", 21]]
+					content: [["display-text", function() {return "<h4>You currently have "+formatWhole(player[this.layer].jellykens)+" "+eggResource[i]+" jellykens, generating "+format(player[this.layer].eggsPerSec)+" "+eggResource[i]+" jellies per second.<br>Current "+eggResource[i]+" jelly-to-jelly ratio: "+player[this.layer].value+" jellies"}], () => player[eggName].points.gte(1) ? "" : "prestige-button", "blank", ["row", [["buyable", 11], "blank", "blank", ["bar", "bigBar"]]], "blank", ["buyable", 21]],
+					buttonStyle() {return {'border-color': 'white'}}
 				},
 				"Vehicles": {
-					content: [["display-text", function() {return player[this.layer].vehicle}],["row", [["buyable", 41],["buyable", 42],["buyable", 43],["buyable", 44]]],["row", [["buyable", 45],["buyable", 46],["buyable", 47],["buyable", 48]]]]
+					content: [["display-text", function() {return player[this.layer].vehicle}],["row", [["buyable", 41],["buyable", 42],["buyable", 43],["buyable", 44]]],["row", [["buyable", 45],["buyable", 46],["buyable", 47],["buyable", 48]]]],
+					buttonStyle() {return {'border-color': 'white'}}
 				},
 				"Artifacts": {
+					buttonStyle() {return {'border-color': 'white'}}
 				},
+			},
+			componentStyles: {
+				"prestige-button"() { return {'background-color': 'white'} },
+				"buyable"() { return {'background-color': 'rgb(255, 255, 255);'} }
 			},
 			color: "#4BDC13",
 			prestigeButtonText() {return "Unlock "+eggResource[i]+" jelly"},
@@ -116,6 +192,8 @@ function dotheFunny() {
 			update(diff){
 				player[this.layer].rechargeTime = player[this.layer].rechargeTime.add(diff)
 			    player[this.layer].vehicle = new Decimal(0)
+				tmp[this.layer].color = "white"
+				if(player.tab==eggName) tmp[this.layer].color = "#4BDC13"
 				player[this.layer].vehicle = player[this.layer].vehicle.add(tmp[this.layer].buyables[41].vehicle).add(tmp[this.layer].buyables[42].vehicle).add(tmp[this.layer].buyables[44].vehicle).add(tmp[this.layer].buyables[44].vehicle).add(tmp[this.layer].buyables[45].vehicle).add(tmp[this.layer].buyables[46].vehicle).add(tmp[this.layer].buyables[47].vehicle).add(tmp[this.layer].buyables[48].vehicle).times(buyableEffect(this.layer, 52)).times(buyableEffect(this.layer, 56))
 				let fuckOFF = player[this.layer].vehicle
 			    player[this.layer].value = new Decimal(eggValue[i]).mul(buyableEffect(this.layer, 51)).mul(buyableEffect(this.layer, 58))
@@ -187,6 +265,7 @@ function dotheFunny() {
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+						player["tree-tab"].piggyBank = player["tree-tab"].piggyBank.add(25)
 					},
 				},
 				32: {
@@ -197,6 +276,7 @@ function dotheFunny() {
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+						player["tree-tab"].piggyBank = player["tree-tab"].piggyBank.add(25)
 					},
 				},
 				33: {
@@ -207,6 +287,7 @@ function dotheFunny() {
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+						player["tree-tab"].piggyBank = player["tree-tab"].piggyBank.add(25)
 					},
 				},
 				34: {
@@ -217,6 +298,7 @@ function dotheFunny() {
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+						player["tree-tab"].piggyBank = player["tree-tab"].piggyBank.add(25)
 					},
 				},
 				35: {
@@ -227,6 +309,7 @@ function dotheFunny() {
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+						player["tree-tab"].piggyBank = player["tree-tab"].piggyBank.add(25)
 					},
 				},
 				36: {
@@ -237,6 +320,7 @@ function dotheFunny() {
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+						player["tree-tab"].piggyBank = player["tree-tab"].piggyBank.add(25)
 					},
 				},
 				41: {
@@ -247,6 +331,7 @@ function dotheFunny() {
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+						player["tree-tab"].piggyBank = player["tree-tab"].piggyBank.add(20)
 					},
 				},
 				42: {
@@ -257,6 +342,7 @@ function dotheFunny() {
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+						player["tree-tab"].piggyBank = player["tree-tab"].piggyBank.add(20)
 					},
 				},
 				43: {
@@ -267,6 +353,7 @@ function dotheFunny() {
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+						player["tree-tab"].piggyBank = player["tree-tab"].piggyBank.add(20)
 					},
 				},
 				44: {
@@ -277,6 +364,7 @@ function dotheFunny() {
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+						player["tree-tab"].piggyBank = player["tree-tab"].piggyBank.add(20)
 					},
 				},
 				45: {
@@ -287,6 +375,7 @@ function dotheFunny() {
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+						player["tree-tab"].piggyBank = player["tree-tab"].piggyBank.add(20)
 					},
 				},
 				46: {
@@ -297,6 +386,7 @@ function dotheFunny() {
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+						player["tree-tab"].piggyBank = player["tree-tab"].piggyBank.add(20)
 					},
 				},
 				47: {
@@ -307,6 +397,7 @@ function dotheFunny() {
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+						player["tree-tab"].piggyBank = player["tree-tab"].piggyBank.add(20)
 					},
 				},
 				48: {
@@ -317,16 +408,18 @@ function dotheFunny() {
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+						player["tree-tab"].piggyBank = player["tree-tab"].piggyBank.add(20)
 					},
 				},
 				51: {
 					cost() { return new Decimal(15).mul(Decimal.pow(1.15, player[this.layer].buyables[this.id])) },
-					effect() {return Decimal.add(1, Decimal.div(player[this.layer].buyables[this.id], 20))},
-					display() { return "<h2>Better Flavour</h2><h4>level: "+formatWhole(player[this.layer].buyables[this.id])+"/25</h4><h3>Effect: +"+format(this.effect().times(100).sub(100))+"% "+eggResource[i]+" jelly value (+1.05x)<br>Cost Scaling: (1.15^x)<br>Cost: "+format(this.cost())+" jellies" },
-					canAfford() { return player.points.gte(this.cost()) && !player[this.layer].buyables[this.id].gte(25) },
+					effect() {return Decimal.add(1, Decimal.div(player[this.layer].buyables[this.id], 10))},
+					display() { return "<h2>Better Flavour</h2><h4>level: "+formatWhole(player[this.layer].buyables[this.id])+"/75</h4><h3>Effect: +"+format(this.effect().times(100).sub(100))+"% "+eggResource[i]+" jelly value (+1.1x)<br>Cost Scaling: (1.15^x)<br>Cost: "+format(this.cost())+" jellies" },
+					canAfford() { return player.points.gte(this.cost()) && !player[this.layer].buyables[this.id].gte(75) },
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+						player["tree-tab"].piggyBank = player["tree-tab"].piggyBank.add(3)
 					},
 					style() {return {'width': '300px', 'height': '100px'}}
 				},
@@ -334,10 +427,11 @@ function dotheFunny() {
 					cost() { return new Decimal(80).mul(Decimal.pow(1.35, player[this.layer].buyables[this.id])) },
 					effect() {return Decimal.add(1, Decimal.div(player[this.layer].buyables[this.id], 10))},
 					display() { return "<h2>Faster Vehicles</h2><h4>level: "+formatWhole(player[this.layer].buyables[this.id])+"/30</h4><h3>Effect: +"+format(this.effect().times(100).sub(100))+"% vehicle capacity (+1.1x)<br>Cost Scaling: (1.35^x)<br>Cost: "+format(this.cost())+" jellies" },
-					canAfford() { return player.points.gte(this.cost()) && !player[this.layer].buyables[this.id].gte(25) },
+					canAfford() { return player.points.gte(this.cost()) && !player[this.layer].buyables[this.id].gte(30) },
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+						player["tree-tab"].piggyBank = player["tree-tab"].piggyBank.add(3)
 					},
 					style() {return {'width': '300px', 'height': '100px'}}
 				},
@@ -349,17 +443,19 @@ function dotheFunny() {
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+						player["tree-tab"].piggyBank = player["tree-tab"].piggyBank.add(3)
 					},
 					style() {return {'width': '300px', 'height': '100px'}}
 				},
 				54: {
 					cost() { return new Decimal(100).mul(Decimal.pow(1.25, player[this.layer].buyables[this.id])) },
-					effect() {return Decimal.add(1, Decimal.div(player[this.layer].buyables[this.id], 10))},
-					display() { return "<h2>Faster Egging lmfao</h2><h4>level: "+formatWhole(player[this.layer].buyables[this.id])+"/15</h4><h3>Effect: +"+format(this.effect().times(100).sub(100))+"% "+eggResource[i]+" jellies/sec (+1.1x)<br>Cost Scaling: (1.25^x)<br>Cost: "+format(this.cost())+" jellies" },
-					canAfford() { return player.points.gte(this.cost()) && !player[this.layer].buyables[this.id].gte(15) },
+					effect() {return Decimal.add(1, Decimal.div(player[this.layer].buyables[this.id], 6.6667))},
+					display() { return "<h2>Faster Egging lmfao</h2><h4>level: "+formatWhole(player[this.layer].buyables[this.id])+"/40</h4><h3>Effect: +"+format(this.effect().times(100).sub(100))+"% "+eggResource[i]+" jellies/sec (+1.15x)<br>Cost Scaling: (1.25^x)<br>Cost: "+format(this.cost())+" jellies" },
+					canAfford() { return player.points.gte(this.cost()) && !player[this.layer].buyables[this.id].gte(40) },
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+						player["tree-tab"].piggyBank = player["tree-tab"].piggyBank.add(3)
 					},
 					style() {return {'width': '300px', 'height': '100px'}}
 				},
@@ -378,17 +474,19 @@ function dotheFunny() {
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+						player["tree-tab"].piggyBank = player["tree-tab"].piggyBank.add(3)
 					},
 					style() {return {'width': '300px', 'height': '100px'}}
 				},
 				56: {
 					cost() { return new Decimal(2563).mul(Decimal.pow(1.65, player[this.layer].buyables[this.id])) },
-					effect() {return Decimal.add(1, Decimal.div(player[this.layer].buyables[this.id], 6.666666667))},
+					effect() {return Decimal.add(1, Decimal.div(player[this.layer].buyables[this.id], 6.6667))},
 					display() { return "<h2>Bigger Vehicles</h2><h4>level: "+formatWhole(player[this.layer].buyables[this.id])+"/20</h4><h3>Effect: +"+format(this.effect().times(100).sub(100))+"% vehicle capacity (+1.15x)<br>Cost Scaling: (1.65^x)<br>Cost: "+format(this.cost())+" jellies" },
-					canAfford() { return player.points.gte(this.cost()) && !player[this.layer].buyables[this.id].gte(20) },
+					canAfford() { return player.points.gte(this.cost()) && player[this.layer].researchLevels.gte(60) && !player[this.layer].buyables[this.id].gte(20) },
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+						player["tree-tab"].piggyBank = player["tree-tab"].piggyBank.add(3)
 					},
 					style() {return {'width': '300px', 'height': '100px'}}
 				},
@@ -400,17 +498,19 @@ function dotheFunny() {
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+						player["tree-tab"].piggyBank = player["tree-tab"].piggyBank.add(3)
 					},
 					style() {return {'width': '300px', 'height': '100px'}}
 				},
 				58: {
-					cost() { return new Decimal(3616.565).mul(Decimal.pow(1.25, player[this.layer].buyables[this.id])) },
-					effect() {return Decimal.add(1, Decimal.div(player[this.layer].buyables[this.id], 10))},
-					display() { return "<h2>Polished Jelly</h2><h4>level: "+formatWhole(player[this.layer].buyables[this.id])+"/15</h4><h3>Effect: +"+format(this.effect().times(100).sub(100))+"% "+eggResource[i]+" jelly value (+1.1x)<br>Cost Scaling: (1.25^x)<br>Cost: "+format(this.cost())+" jellies" },
+					cost() { return new Decimal(3616.565).mul(Decimal.pow(1.45, player[this.layer].buyables[this.id])) },
+					effect() {return Decimal.add(1, Decimal.div(player[this.layer].buyables[this.id], 4))},
+					display() { return "<h2>Polished Jelly</h2><h4>level: "+formatWhole(player[this.layer].buyables[this.id])+"/15</h4><h3>Effect: +"+format(this.effect().times(100).sub(100))+"% "+eggResource[i]+" jelly value (+1.25x)<br>Cost Scaling: (1.45^x)<br>Cost: "+format(this.cost())+" jellies" },
 					canAfford() { return player.points.gte(this.cost()) && player[this.layer].researchLevels.gte(60) && !player[this.layer].buyables[this.id].gte(15) },
 					buy() {
 						player.points = player.points.sub(this.cost())
 						setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+						player["tree-tab"].piggyBank = player["tree-tab"].piggyBank.add(3)
 					},
 					style() {return {'width': '300px', 'height': '100px'}}
 				},

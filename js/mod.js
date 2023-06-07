@@ -13,11 +13,15 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "Test 2",
-	name: "Revolutionary Invention",
+	num: "Test 2.1",
+	name: "where eric reswordes???7",
 }
 
 let changelog = `<h1>Changelog:</h1><br>
+	<h3>Test 2.1: where eric reswordes???7</h3><br>
+		- Buffed some researches.<br>
+		- Added back "tree-tab" tabs.<br>
+		- Polished design by 2%.<br>
 	<h3>Test 2: Revolutionary Invention</h3><br>
 		- Added more researches.<br>
 		- Added vehicles. (DEADASS)<br>
